@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ARCFlash_Generate_Linux_D2D_WSDL" default="generate_linux_d2d_wsdl" basedir=".">
+	
+	<property name="linuxd2d.serviceimpl.class" value="com.ca.arcserve.linuximaging.webservice.LinuximagingServiceImpl"/>	
+	<property name="linuxd2d.service.name" value="{http://webservice.linuximaging.arcserve.ca.com}LinuximagingServiceImpl"/>
+	<property name="linuxd2d.port.name" value="{http://webservice.linuximaging.arcserve.ca.com}LinuximagingServiceImplHttpSoap11Endpoint"/>
+	<property name="quartz" value="${dir.externalLib}/quartz/quartz-2.2.1.jar"/>
+	<property name="servlet" value="${dir.externalLib}/Tomcat/apache-tomcat-7.0.32/lib/servlet-api.jar"/>
+	<property name="common" value="${dir.temp}/${file.linuxcommon.jar}"/>
+	<property name="contract" value="${dir.temp}/${file.linuxwebservicecontract.jar}"/>
+	<property name="serviceimpl" value="${dir.temp}/${file.linuxwebservice.jar}"/>
+	<property name="hypervisormanager" value="${dir.temp}/${file.hypervisormanager.jar}"/>
+	<property name="cloudmanager" value="${dir.temp}/${file.cloudmanager.jar}"/>
+	<property name="virtuallab" value="${dir.temp}/${file.virtuallab.jar}"/>
+	<property name="wsgen.linuxd2d.classpath" value="${quartz}:${servlet}:${common}:${contract}:${serviceimpl}:${hypervisormanager}:${virtuallab}:${cloudmanager}"/>
+	<property name="wsgen.linuxd2d.classpathforrps" value="${quartz};${servlet};${common};${contract};${serviceimpl};${hypervisormanager};${virtuallab};${cloudmanager}"/>
+	<path id="wsgen.main.classpath">
+		<pathelement location="${dir.externalLib}/jaxws-ri2.2.7/lib/jaxws-tools.jar"/>
+		<pathelement location="${dir.externalLib}/jaxws-ri2.2.7/lib/jaxb-xjc.jar"/>
+	</path>	
+		
+	<target name="generate_linux_d2d_wsdl">
+		<delete dir="${dir.temp}/WSDL_LINUXD2D"/>
+		<mkdir dir="${dir.temp}/WSDL_LINUXD2D"/>    
+		<java classname="com.sun.tools.ws.WsGen">
+         <arg value="-d"/>
+		 <arg value="${dir.temp}/WSDL_LINUXD2D"/>
+		 <arg value="-r"/>
+		 <arg value="${dir.temp}/WSDL_LINUXD2D"/>
+		 <arg value="-cp"/>
+		 <arg value="${wsgen.linuxd2d.classpath}"/>
+		 <arg value="${linuxd2d.serviceimpl.class}"/>
+		 <arg value="-wsdl"/>
+		 <arg value="-inlineSchemas"/>
+		 <arg value="-servicename"/>
+		 <arg value="${linuxd2d.service.name}"/>
+		 <arg value="-portname"/>
+		 <arg value="${linuxd2d.port.name}"/>
+         <classpath refid="wsgen.main.classpath"/>
+		</java>
+		
+		<copy file="${dir.temp}/WSDL_LINUXD2D/LinuximagingServiceImpl.wsdl" 
+			  todir="${dir.temp}/tmp_linux_webserice_contract_bin/com/ca/arcserve/linuximaging/webservice/client"/>
+		
+		<jar destfile="${dir.temp}/${file.linuxwebservicecontract.jar}">
+			<union>
+				<fileset dir="${dir.temp}/tmp_linux_webserice_contract_bin" excludes="**/*.sig"/>
+				<fileset dir="${dir.project.linuxwebserviceContract}/src" includes="**/*.properties" />
+			</union>
+			<manifest>
+				<attribute name="build-number" value="${major.version}.${minor.version}.${build.number}.${build.revision}" />
+			</manifest>
+		</jar>
+		
+		
+	</target>
+	
+	<target name="generate_linux_d2d_wsdl_for_rps">
+		<delete dir="${dir.temp}/WSDL_LINUXD2D"/>
+		<mkdir dir="${dir.temp}/WSDL_LINUXD2D"/>    
+		<java classname="com.sun.tools.ws.WsGen">
+         <arg value="-d"/>
+		 <arg value="${dir.temp}/WSDL_LINUXD2D"/>
+		 <arg value="-r"/>
+		 <arg value="${dir.temp}/WSDL_LINUXD2D"/>
+		 <arg value="-cp"/>
+		 <arg value="${wsgen.linuxd2d.classpathforrps}"/>
+		 <arg value="${linuxd2d.serviceimpl.class}"/>
+		 <arg value="-wsdl"/>
+		 <arg value="-inlineSchemas"/>
+		 <arg value="-servicename"/>
+		 <arg value="${linuxd2d.service.name}"/>
+		 <arg value="-portname"/>
+		 <arg value="${linuxd2d.port.name}"/>
+         <classpath refid="wsgen.main.classpath"/>
+		</java>
+		
+		<copy file="${dir.temp}/WSDL_LINUXD2D/LinuximagingServiceImpl.wsdl" 
+			  todir="${dir.temp}/tmp_linux_webserice_contract_bin/com/ca/arcserve/linuximaging/webservice/client"/>
+		
+		<jar destfile="${dir.temp}/${file.linuxwebservicecontract.jar}">
+			<union>
+				<fileset dir="${dir.temp}/tmp_linux_webserice_contract_bin" excludes="**/*.sig"/>
+				<fileset dir="${dir.project.linuxwebserviceContract}/src" includes="**/*.properties" />
+			</union>
+			<manifest>
+				<attribute name="build-number" value="${major.version}.${minor.version}.${build.number}.${build.revision}" />
+			</manifest>
+		</jar>
+		
+		
+	</target>
+
+</project>

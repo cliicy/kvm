@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module rename-to='contents'>
+  <!-- Inherit the core Web Toolkit stuff.                        -->
+  <inherits name='com.google.gwt.user.User'/>
+  <inherits name="com.extjs.gxt.ui.GXT"/>
+  <entry-point class='com.ca.arcserve.linuximaging.ui.client.ARCserveLinuxImagingUI'/>
+  <extend-property name="locale" values="en"/>
+  <extend-property name="locale" values="de_DE"/>
+  <extend-property name="locale" values="fr_FR"/>
+  <extend-property name="locale" values="ja_JP"/>
+  <extend-property name="locale" values="pt_BR"/>
+  <extend-property name="locale" values="es_ES"/>
+  <extend-property name="locale" values="it_IT"/>
+  <extend-property name="locale" values="zh_CN"/>
+  <extend-property name="locale" values="zh_TW"/>
+  <source path='client'/>
+
+</module>

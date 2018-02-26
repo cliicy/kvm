@@ -1,0 +1,771 @@
+﻿<?xml version="1.0"?>
+<project name="ARCFlash" default="all" basedir=".">
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+	<taskdef resource="com/ca/arcflash/ant/tasks/CATasks.properties" />
+	<property environment="env" />
+
+	<property name="dir.build" value="Build" />
+	<property name="dir.output" value="${dir.build}/Output" />
+	<property name="dir.output.Configuration" value="${dir.build}/Output/configfiles" />
+	<property name="dir.temp" value="${dir.build}/Temp" />
+	<property name="dir.source" value="../../" />
+	<property name="dir.d2dsource" value="../../../../ARCserve/D2D/Server" />
+	<property name="dir.externalLib" value="${dir.source}../external/java/ExternalLib" />
+	<property name="dir.d2dexternalLib" value="../../../../ARCserve/ExternalLib" />
+	<property name="dir.project.linuxcommon" value="${dir.source}/WebServer/Common" />
+	<property name="dir.webUI" value="${dir.source}/WebServer/ARCserveLinuxImagingUI" />
+	<property name="dir.httpSharePath" value="${dir.source}/WebServer/HttpSharePath" />
+	<property name="dir.project.vmwaremanager" value="${dir.d2dsource}/VMwareManager" />
+	<property name="dir.project.cloudmanager" value="${dir.d2dsource}/CloudManager" />
+	<property name="dir.project.afjobscript" value="${dir.d2dsource}/VCM/AFJobScript" />
+	<property name="dir.project.d2dwebserviceContract" value="${dir.d2dsource}/WebServiceContract" />
+	<property name="dir.project.rpswebserviceContract" value="${dir.d2dsource}/RPSServiceContract" />
+	<property name="dir.project.instantvm" value="${dir.d2dsource}/InstantVM"/>
+	<property name="dir.project.linuxwebserviceContract" value="${dir.source}/WebServer/ARCserveLinuxImagingContract" />
+	<property name="dir.project.webserviceSearch" value="${dir.source}/WebServer/ARCServeLinuxImagingSearch" />
+	<property name="dir.project.hypervisormanager" value="${dir.source}/WebServer/HypervisorManager" />
+	<property name="dir.project.hypervmanager" value="${dir.source}/WebServer/HyperVManager" />
+	<property name="dir.project.linuxwebservice" value="${dir.source}/WebServer/ARCserveLinuxImaging" />
+	<property name="dir.project.virtuallab" value="${dir.source}/WebServer/VirtualLab" />
+	<property name="dir.project.javacmd" value="${dir.source}/javacmd/javacmd4linuxd2d" />
+	<property name="file.linuxcommon.jar" value="linuximaging-common.jar" />
+	<property name="file.afjobscript.jar" value="flash-jobscript.jar" />
+	<property name="file.vmwaremanager.jar" value="vmwaremanager.jar" />
+	<property name="file.cloudmanager.jar" value="cloudmanager.jar" />
+	<property name="file.hypervisormanager.jar" value="hypervisormanager.jar" />
+	<property name="file.hypervmanager.jar" value="hypervmanager.jar" />
+	<property name="file.d2dwebservicecontract.jar" value="flash-webservice-contract.jar" />
+	<property name="file.rpswebservicecontract.jar" value="rps-webservice-contract.jar" />
+	<property name="file.linuxwebservicecontract.jar" value="linuximaging-webservice-contract.jar" />
+	<property name="file.webservicesearch.jar" value="linuximaging-webservice-search.jar" />
+	<property name="file.linuxwebservice.jar" value="linuximaging-webservice.jar" />
+	<property name="file.webserviceui.jar" value="linuximaging-webui.jar" />
+	<property name="file.virtuallab.jar" value="virtuallab.jar" />
+	<property name="file.javacmd.jar" value="javacmd.jar" />
+
+
+	<!-- pay attent to the macro_javac_jar definition for this property -->
+	<property name="debugflag" value="on" />
+	<property environment="env" />
+	<property name="gwtworkers" value="${env.NUMBER_OF_PROCESSORS}" />
+
+	<import file="build_common.xml" />
+	<import file="generate_linux_d2d_wsdl.xml" />
+
+	<target name="all" depends="prepare, build, package">
+	</target>
+	<target name="clean">
+		<delete dir="${dir.build}" />
+	</target>
+	<target name="prepare" description="remove all files">
+		<record name="buildD2D.log" loglevel="verbose" append="false"/>
+		<mkdir dir="${dir.build}" />
+		<mkdir dir="${dir.source}" />
+
+		<mkdir dir="${dir.output}" />
+		<mkdir dir="${dir.temp}" />
+		<mkdir dir="${dir.output.Configuration}" />
+		<!--
+		<fail message="BUILD_NUMBER environment variable is not set.">
+			<condition>
+				<not>
+					<isset property="env.BUILD_NUMBER" />
+				</not>
+			</condition>
+		</fail>
+		<fail message="BUILD_REVISION environment variable is not set.">
+			<condition>
+				<not>
+					<isset property="env.BUILD_REVISION" />
+				</not>
+			</condition>
+		</fail>
+        -->
+		<var name="build.number" value="${env.BUILD_NUMBER}" />
+		<var name="build.revision" value="${env.BUILD_REVISION}" />
+	</target>
+
+
+	<target name="fetch">
+		<exec executable="hco.exe">
+			<arg line='-b cscr501 -en "EPIC 17-CRE" -st Development -vp "\ARCserve Flash" -s "*" -cp "${dir.source}" -br -usr ${HARVEST_USERNAME} -pw ${HARVEST_PASSWORD} -op pc -o ${LOG_FOLDER}\log.txt' />
+		</exec>
+	</target>
+	<target name="build_linux_common" description="Build linux Common Project">
+		<var name="build.bin" value="${dir.temp}/tmp_linux_common_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.linuxcommon}/src"
+			jar.file.path.name="${dir.temp}/${file.linuxcommon.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.linuxcommon.jar}"
+			jar.path.tmp="${dir.temp}/linux_common_temp"
+			jar.path="${dir.temp}/linux_common">
+			<javac-srcs>
+				<src path="${dir.project.linuxcommon}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/JRE8U111/server_jre_x64/lib" includes="**/*.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<pathelement location="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.linuxcommon}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+			<dependclasspath>
+				<classpath>
+					<pathelement location="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</dependclasspath>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_vmwaremanager" description="Build vmwaremanager Project">
+		<var name="build.bin" value="${dir.temp}/tmp_vmwaremanager_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.vmwaremanager}/src"
+			jar.file.path.name="${dir.temp}/${file.vmwaremanager.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.vmwaremanager.jar}"
+			jar.path.tmp="${dir.temp}/vmwaremanager_temp"
+			jar.path="${dir.temp}/vmwaremanager">
+			<javac-srcs>
+				<src path="${dir.project.vmwaremanager}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.d2dexternalLib}/Axis">
+						<include name="**/*.jar" />
+					</fileset>
+					<fileset dir="${dir.d2dexternalLib}/jaxws">
+						<include name="**/*.jar" />
+					</fileset>
+					<pathelement location="${dir.d2dexternalLib}/VMwareVISDK/vim25.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.vmwaremanager}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+			<extra-tasks>
+				<copy  file="${dir.temp}/${file.vmwaremanager.jar}"  tofile="${dir.output}/${file.vmwaremanager.jar}"/>
+			</extra-tasks>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_cloudmanager" description="Build cloudmanager Project">
+		<var name="build.bin" value="${dir.temp}/tmp_cloudmanager_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.cloudmanager}/src"
+			jar.file.path.name="${dir.temp}/${file.cloudmanager.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.cloudmanager.jar}"
+			jar.path.tmp="${dir.temp}/cloudmanager_temp"
+			jar.path="${dir.temp}/cloudmanager">
+			<javac-srcs>
+				<src path="${dir.project.cloudmanager}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.d2dexternalLib}/cloud_sdk/aws/third-party">
+						<include name="lib/*.jar" />
+					</fileset>
+					<fileset dir="${dir.d2dexternalLib}/cloud_sdk/aws">
+						<include name="lib/*.jar" />
+					</fileset>
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.cloudmanager}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+			<extra-tasks>
+				<copy  file="${dir.temp}/${file.cloudmanager.jar}"  tofile="${dir.output}/${file.cloudmanager.jar}"/>
+			</extra-tasks>
+		</macro_javac_jar>
+		<copy file="${dir.project.cloudmanager}/CloudConfigurations.xml" tofile="${dir.output.Configuration}/CloudConfigurations.xml" />
+	</target>
+	
+	<target name="build_hypervmanager" description="Build hypervmanager Project">
+		<var name="build.bin" value="${dir.temp}/tmp_hypervmanager_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.hypervmanager}/src"
+			jar.file.path.name="${dir.temp}/${file.hypervmanager.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.hypervmanager.jar}"
+			jar.path.tmp="${dir.temp}/hypervmanager_temp"
+			jar.path="${dir.temp}/hypervmanager">
+			<javac-srcs>
+				<src path="${dir.project.hypervmanager}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<pathelement location="${dir.externalLib}/jdom/jdom.jar" />
+					<pathelement location="${dir.externalLib}/jcifs-1.3.17/jcifs-1.3.17.jar" />
+					<pathelement location="${dir.externalLib}/openwsman/openwsman.jar" />
+					<pathelement location="${dir.externalLib}/JavaWinRemote/jwinrc-5.1.6.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.hypervmanager}/src" includes="**/*.properties" />
+					<fileset dir="${dir.project.hypervmanager}/src" includes="**/*.res" />
+				</union>
+			</jarFile-resources>
+			<extra-tasks>
+				<copy  file="${dir.temp}/${file.hypervmanager.jar}"  tofile="${dir.output}/${file.hypervmanager.jar}"/>
+			</extra-tasks>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_hypervisormanager" description="Build hypervisormanager Project">
+		<var name="build.bin" value="${dir.temp}/tmp_hypervisormanager_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.hypervisormanager}/src"
+			jar.file.path.name="${dir.temp}/${file.hypervisormanager.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.hypervisormanager.jar}"
+			jar.path.tmp="${dir.temp}/hypervisormanager_temp"
+			jar.path="${dir.temp}/hypervisormanager">
+			<javac-srcs>
+				<src path="${dir.project.hypervisormanager}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<pathelement location="${dir.temp}/${file.vmwaremanager.jar}" />
+					<pathelement location="${dir.temp}/${file.hypervmanager.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<pathelement location="${dir.temp}/${file.vmwaremanager.jar}" />
+					<pathelement location="${dir.temp}/${file.hypervmanager.jar}" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset dir="${dir.externalLib}/httpclient-4.3.4" includes="*.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.hypervisormanager}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+			<extra-tasks>
+				<copy  file="${dir.temp}/${file.hypervisormanager.jar}"  tofile="${dir.output}/${file.hypervisormanager.jar}"/>
+			</extra-tasks>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_afjobscript" description="Build AFJobScript Project">
+		<var name="build.bin" value="${dir.temp}/tmp_afjobscript_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.afjobscript}/src"
+			jar.file.path.name="${dir.temp}/${file.afjobscript.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.afjobscript.jar}"
+			jar.path.tmp="${dir.temp}/afjobscript_temp"
+			jar.path="${dir.temp}/afjobscript">
+			<javac-srcs>
+				<src path="${dir.project.afjobscript}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<pathelement location="${dir.externalLib}/gwt-2.4.0/gwt-user.jar" />
+					<pathelement location="${dir.externalLib}/gwt-2.4.0/gwt-dev.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.afjobscript}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_d2d_webserice_contract" description="Build D2D WebService Contract Project">
+		<var name="build.bin" value="${dir.temp}/tmp_d2d_webserice_contract_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.d2dwebserviceContract}/src"
+			jar.file.path.name="${dir.temp}/${file.d2dwebservicecontract.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.d2dwebservicecontract.jar}"
+			jar.path.tmp="${dir.temp}/d2dwebservicecontract_temp"
+			jar.path="${dir.temp}/d2dwebservicecontract">
+			<javac-srcs>
+				<src path="${dir.project.d2dwebserviceContract}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<pathelement location="${dir.temp}/${file.afjobscript.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/lib" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset dir="${dir.externalLib}/gwt-2.4.0" includes="**/*.jar" />
+					<fileset dir="${dir.d2dexternalLib}/jaxrs/jersey-archive-1.17.1/lib" includes="*.jar" />
+					<pathelement location="${dir.temp}/${file.afjobscript.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.d2dwebserviceContract}/src" includes="**/*.properties,**/*.wsdl" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_rps_webservice_contract" description="Build RPS WebService Contract Project">
+		<var name="build.bin" value="${dir.temp}/tmp_rps_service_contract_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.rpswebservicecontract}/src"
+			jar.file.path.name="${dir.temp}/${file.rpswebservicecontract.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.rpswebservicecontract.jar}"
+			jar.path.tmp="${dir.temp}/rpswebservicecontract_temp"
+			jar.path="${dir.temp}/rpswebservicecontract">
+			<javac-srcs>
+				<src path="${dir.project.rpswebserviceContract}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<fileset file="${dir.temp}/${file.d2dwebservicecontract.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/lib" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset dir="${dir.externalLib}/gwt-2.4.0" includes="**/*.jar" />
+					<pathelement location="${dir.temp}/${file.d2dwebservicecontract.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.rpswebserviceContract}/src" includes="**/*.properties,**/*.wsdl" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+	</target>
+	
+	<target name="build_linux_webserice_contract" description="Build Linux WebService Contract Project">
+		<var name="build.bin" value="${dir.temp}/tmp_linux_webserice_contract_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.linuxwebserviceContract}/src"
+			jar.file.path.name="${dir.temp}/${file.linuxwebservicecontract.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.linuxwebservicecontract.jar}"
+			jar.path.tmp="${dir.temp}/linux-webservice-contract_temp"
+			jar.path="${dir.temp}/linux-webservice-contract">
+			<javac-srcs>
+				<src path="${dir.project.linuxwebserviceContract}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<fileset file="${dir.temp}/${file.rpswebservicecontract.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/lib" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset dir="${dir.externalLib}/gwt-2.4.0" includes="**/*.jar" />
+					<pathelement location="${dir.temp}/${file.afjobscript.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.linuxwebserviceContract}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+	</target>
+	
+	<target name="build_webserice_search" description="Build WebService search Project">
+		<var name="build.bin" value="${dir.temp}/tmp_webserice_search_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.webserviceSearch}/src"
+			jar.file.path.name="${dir.temp}/${file.webservicesearch.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.webservicesearch.jar}"
+			jar.path.tmp="${dir.temp}/webservice-search_temp"
+			jar.path="${dir.temp}/webservice-search">
+			<javac-srcs>
+				<src path="${dir.project.webserviceSearch}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset dir="${dir.externalLib}/Lucene" includes="*.jar" />
+					<fileset dir="${dir.temp}" includes="${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.webserviceSearch}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+	</target>
+	
+	<union id="webservice_ui_lib_id">
+		<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/lib" includes="**/*.jar" />
+		<fileset file="${dir.externalLib}/ExtGWT/gxt-2.2.5-gwt22.jar" />
+		<fileset file="${dir.externalLib}/gwt-2.4.0/gwt-servlet.jar" />
+		<fileset file="${dir.temp}/${file.afjobscript.jar}" />
+		<fileset file="${dir.temp}/${file.linuxcommon.jar}" />
+		<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+		<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+		<fileset dir="${dir.d2dexternalLib}/fileupload" includes="*.jar" />
+	</union>
+	<target name="build_web_ui" description="Build Web UI">
+		<mkdir dir="${dir.webUI}/war/WEB-INF/lib" />
+		<var name="build.bin" value="${dir.temp}/tmp_web_ui_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.webUI}/src"
+			jar.file.path.name="${dir.temp}/${file.webserviceui.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.webserviceui.jar}"
+			jar.path.tmp="${dir.temp}/linuximaging-webui_temp"
+			jar.path="${dir.temp}/linuximaging-webui">
+			<javac-srcs>
+				<src path="${dir.webUI}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<resources refid="webservice_ui_lib_id" />
+					<fileset dir="${dir.externalLib}/Tomcat/apache-tomcat-7.0.32/lib" includes="**/*.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.webUI}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+		<copy todir="${dir.output.Configuration}">
+			<fileset dir="${dir.webUI}/src/com/ca/arcserve/linuximaging/ui/client" includes="Links*.properties" />
+		</copy>
+
+		<copy file="${dir.webUI}/war/WEB-INF/log4j.properties" tofile="${dir.output.Configuration}/log4j-webui.properties" />
+
+		<mkdir dir="${dir.temp}/linuximaging-webui" />
+		<copy todir="${dir.temp}/linuximaging-webui">
+			<fileset dir="${dir.webUI}/src">
+			</fileset>
+			<fileset dir="${build.bin}">
+			</fileset>
+		</copy>
+		<jar destfile="${dir.temp}/linuximaging-webui-src.jar" basedir="${dir.temp}/linuximaging-webui" />
+
+
+	</target>
+
+	<target name="build_webui_war" description="build web ui war">
+		<mkdir dir="${dir.temp}/webuigwt" />
+		<macro_gwtc 
+		flagfile="${dir.temp}/webuigwt/webuigwtflag.txt"
+		nocache.js.file="${dir.temp}/webuigwt/war/contents/contents.nocache.js" 
+		gwt.module.name="com.ca.arcserve.linuximaging.ui.ARCserveLinuxImagingUI" 
+		gwt.output.dir="${dir.temp}/webuigwt">
+			<gwt-srcs>
+				<fileset dir="${dir.webUI}/src" includes="com/ca/arcflash/ui/ARCFlashWebUI.gwt.xml,com/ca/arcflash/ui/client/**/*.*" />
+				<fileset dir="${dir.project.linuxwebserviceContract}/src" includes="com/ca/arcserve/linuximaging/webservice/ARCserveLinuxImagingContract.gwt.xml,com/ca/arcserve/linuximaging/**/*.*"
+				excludes="com/ca/arcserve/linuximaging/webservice/client/*.*"/>
+			</gwt-srcs>
+			<classpaths>
+				<classpath>
+					<pathelement location="${dir.webUI}/src" />
+					<pathelement location="${dir.project.linuxwebserviceContract}/src" />
+					<pathelement location="${dir.externalLib}/gwt-2.4.0/gwt-user.jar" />
+					<pathelement location="${dir.externalLib}/gwt-2.4.0/gwt-dev.jar" />
+					<resources refid="webservice_ui_lib_id" />
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+				</classpath>
+			</classpaths>
+		</macro_gwtc>
+
+	</target>
+	<target name="build_virtuallab" description="Build Virtual Lab">
+		<var name="build.bin" value="${dir.temp}/tmp_virtuallab_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.virtuallab}/src"
+			jar.file.path.name="${dir.temp}/${file.virtuallab.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.virtuallab.jar}"
+			jar.path.tmp="${dir.temp}/virtuallab_temp"
+			jar.path="${dir.temp}/virtuallab">
+			<javac-srcs>
+				<src path="${dir.project.virtuallab}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<fileset file="${dir.temp}/${file.linuxcommon.jar}" />
+					<fileset file="${dir.temp}/${file.hypervisormanager.jar}" />
+					<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+					<fileset file="${dir.externalLib}/jsch-0.1.51/jsch-0.1.51.jar" />
+					<fileset file="${dir.temp}/${file.linuxcommon.jar}" />
+					<fileset file="${dir.temp}/${file.hypervisormanager.jar}" />
+					<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.virtuallab}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+		<copy file="${dir.project.virtuallab}/log4j.properties" tofile="${dir.output.Configuration}/log4j-virtualenvironment.properties" />
+	</target>
+	<union id="webservice_lib_id">
+		<fileset file="${dir.temp}/${file.vmwaremanager.jar}" />
+		<fileset file="${dir.temp}/${file.cloudmanager.jar}" />
+		<fileset file="${dir.temp}/${file.hypervmanager.jar}" />
+		<fileset file="${dir.temp}/${file.hypervisormanager.jar}" />
+		<fileset file="${dir.temp}/${file.linuxcommon.jar}" />
+		<fileset file="${dir.temp}/${file.d2dwebservicecontract.jar}" />
+		<fileset file="${dir.temp}/${file.rpswebservicecontract.jar}" />
+		<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+		<fileset file="${dir.temp}/${file.webservicesearch.jar}" />
+		<fileset file="${dir.temp}/${file.virtuallab.jar}" />
+		<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/lib" includes="**/*.jar" />
+		<fileset dir="${dir.externalLib}/jaxmail1.4.1" includes="**/*.jar" />
+		<fileset dir="${dir.externalLib}/httpclient-4.3.4" includes="**/*.jar" />
+		<fileset file="${dir.externalLib}/quartz/quartz-2.2.1.jar" />
+		<fileset file="${dir.externalLib}/quartz/slf4j-api-1.6.6.jar" />
+		<fileset file="${dir.externalLib}/Apache/commons-collections-3.2.jar" />
+		<fileset file="${dir.externalLib}/Apache/commons-logging-1.1.1.jar" />
+		<fileset dir="${dir.externalLib}/log4j/dist/lib" includes="log4j-1.2.15.jar" />
+		<fileset file="${dir.externalLib}/jdbc/sqlite-jdbc-3.7.15.jar" />
+		<fileset file="${dir.externalLib}/jdbc/sqljdbc4.jar" />
+		<fileset file="${dir.externalLib}/jdbc/postgresql-9.3-1100.jdbc41.jar" />
+		<fileset file="${dir.externalLib}/json1.1.1/json-simple-1.1.1.jar" />
+		<fileset file="${dir.externalLib}/Lucene/lucene-analyzers-3.5.0.jar" />
+		<fileset file="${dir.externalLib}/Lucene/lucene-core-3.5.0.jar" />
+		<fileset file="${dir.externalLib}/Lucene/lucene-highlighter-3.5.0.jar" />
+		<fileset file="${dir.externalLib}/license/lic98/lic98j.jar" />
+		<fileset file="${dir.externalLib}/jcifs-1.3.17/jcifs-1.3.17.jar" />
+		<fileset file="${dir.externalLib}/openwsman/openwsman.jar" />
+		<fileset file="${dir.externalLib}/jdom/jdom.jar" />
+		<fileset file="${dir.externalLib}/JavaWinRemote/jwinrc-5.1.6.jar" />
+		<fileset file="${dir.externalLib}/jsch-0.1.51/jsch-0.1.51.jar" />
+		<fileset file="${dir.d2dexternalLib}/jersey-bundle-1.19.jar" />
+		<fileset file="${dir.d2dexternalLib}/jersey-client-1.19.jar" />
+		<fileset file="${dir.d2dexternalLib}/jersey-core-1.19.jar" />
+		<fileset file="${dir.d2dexternalLib}/java-json.jar" />
+	    <fileset file="${dir.d2dexternalLib}/AERPClient.jar" />
+	    <fileset file="${dir.d2dexternalLib}/mail-1.4.5.jar" />
+	</union>
+	<target name="build_linux_webservice" description="Build Linux Web Service">
+
+		<mkdir dir="${dir.project.linuxwebservice}/WebContent/WEB-INF/lib" />
+
+		<var name="build.bin" value="${dir.temp}/tmp_linux_web_service_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.linuxwebservice}/src"
+			jar.file.path.name="${dir.temp}/${file.linuxwebservice.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.linuxwebservice.jar}"
+			jar.path.tmp="${dir.temp}/linuximaging-webservice_temp"
+			jar.path="${dir.temp}/linuximaging-webservice">
+			<javac-srcs>
+				<src path="${dir.project.linuxwebservice}/src" />
+			</javac-srcs>
+			<dependclasspath>
+				<classpath>
+					<fileset file="${dir.temp}/${file.linuxcommon.jar}" />
+					<fileset file="${dir.temp}/${file.hypervisormanager.jar}" />
+					<fileset file="${dir.temp}/${file.d2dwebservicecontract.jar}" />
+					<fileset file="${dir.temp}/${file.rpswebservicecontract.jar}" />
+					<fileset file="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+					<fileset file="${dir.temp}/${file.webservicesearch.jar}" />
+					<fileset file="${dir.temp}/${file.virtuallab.jar}" />
+				</classpath>
+			</dependclasspath>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/jaxws-ri2.2.7/endorsed" includes="*.jar" />
+					<resources refid="webservice_lib_id" />
+					<fileset dir="${dir.externalLib}/Tomcat/apache-tomcat-8.0.28/lib" includes="**/*.jar" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.linuxwebservice}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+		</macro_javac_jar>
+
+		<copy file="${dir.project.linuxwebservice}/WebContent/WEB-INF/log4j.properties" tofile="${dir.output.Configuration}/log4j-webservice.properties" />
+		<!--
+		<copy file="${dir.project.webservice}/RetryPolicy.xml" tofile="${dir.output.Configuration}/RetryPolicy.xml" />
+		-->
+	</target>
+	
+	<union id="javacmd_lib_id">
+		<fileset file="${dir.externalLib}/jdom/jaxen-core.jar" />
+		<fileset file="${dir.externalLib}/jdom/jaxen-jdom.jar" />
+		<fileset file="${dir.externalLib}/jdom/jdom.jar" />
+		<fileset file="${dir.externalLib}/jdom/saxpath.jar" />
+	</union>
+	<target name="build_javacmd" description="Build javacmd Project">
+		<var name="build.bin" value="${dir.temp}/tmp_javacmd_bin" />
+		<macro_javac_jar
+			build.bin.dir="${build.bin}"
+			java.source.dirs="${dir.project.javacmd}/src"
+			jar.file.path.name="${dir.temp}/${file.javacmd.jar}"
+			jar.file.path.name.tmp="${dir.temp}/tmp_${file.javacmd.jar}"
+			jar.path.tmp="${dir.temp}/javacmd_temp"
+			jar.path="${dir.temp}/javacmd">
+			<javac-srcs>
+				<src path="${dir.project.javacmd}/src" />
+			</javac-srcs>
+			<classpaths>
+				<classpath>
+					<fileset dir="${dir.externalLib}/JRE8U111/server_jre_x64/lib" includes="**/*.jar" />
+					<resources refid="javacmd_lib_id" />
+					<resources refid="webservice_lib_id" />
+					<pathelement location="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+					<pathelement location="${dir.temp}/${file.linuxwebservice.jar}" />
+					<pathelement location="${dir.temp}/${file.virtuallab.jar}" />
+				</classpath>
+			</classpaths>
+			<jarFile-resources>
+				<union>
+					<fileset dir="${build.bin}" excludes="**/*.sig">
+					</fileset>
+					<fileset dir="${dir.project.javacmd}/src" includes="**/*.properties" />
+				</union>
+			</jarFile-resources>
+			<dependclasspath>
+				<classpath>
+					<pathelement location="${dir.temp}/${file.virtuallab.jar}" />
+					<pathelement location="${dir.temp}/${file.linuxwebservicecontract.jar}" />
+					<pathelement location="${dir.temp}/${file.linuxwebservice.jar}" />
+				</classpath>
+			</dependclasspath>
+		</macro_javac_jar>
+		
+		<copy file="${dir.project.javacmd}/config/log4j.properties" tofile="${dir.output.Configuration}/log4j-javacmd.properties" />
+	</target>
+	<target name="buildforRPS" depends="build_hypervmanager,build_hypervisormanager,build_linux_webserice_contract,build_webserice_search,build_linux_common,build_virtuallab,build_linux_webservice,generate_linux_d2d_wsdl_for_rps" description="compiles the source code">
+	</target>
+	<target name="build" depends="build_vmwaremanager,build_cloudmanager,build_hypervmanager,build_hypervisormanager,build_afjobscript,build_d2d_webserice_contract,build_rps_webservice_contract,build_linux_webserice_contract,build_webserice_search,build_linux_common,build_web_ui,build_virtuallab,build_linux_webservice,build_webui_war,build_javacmd,generate_linux_d2d_wsdl" description="compiles the source code">
+	</target>
+	<target name="replace_build" depends="replace,build" description="compiles the source code">
+	</target>
+	<target name="package" description="package">
+
+		<copy todir="${dir.output}/WebServiceImpl">
+			<fileset dir="${dir.project.linuxwebservice}/WebContent/" excludes="WEB-INF/classes,WEB-INF/classes/**,**/*.sig" />
+		</copy>
+
+		<copy todir="${dir.output}/WebServiceImpl/WEB-INF/lib">
+			<resources refid="webservice_lib_id" />
+			<fileset file="${dir.temp}/${file.afjobscript.jar}" />
+			<fileset file="${dir.temp}/${file.vmwaremanager.jar}" />
+			<fileset file="${dir.temp}/${file.cloudmanager.jar}" />
+			<fileset file="${dir.temp}/${file.hypervmanager.jar}" />
+			<fileset file="${dir.temp}/${file.hypervisormanager.jar}" />
+			<fileset file="${dir.temp}/${file.d2dwebservicecontract.jar}" />
+			<fileset file="${dir.temp}/${file.rpswebservicecontract.jar}" />
+			<fileset file="${dir.temp}/${file.linuxwebservice.jar}" />
+			<fileset file="${dir.temp}/${file.javacmd.jar}" />
+			<fileset file="${dir.temp}/${file.virtuallab.jar}" />
+			<fileset dir="${dir.d2dexternalLib}/Axis" includes="**/*.jar" />
+			<fileset file="${dir.d2dexternalLib}/VMwareVISDK/vim25.jar" />
+			<fileset dir="${dir.d2dexternalLib}/cloud_sdk/aws/lib" includes="*.jar"/>
+			<fileset dir="${dir.d2dexternalLib}/cloud_sdk/aws/third-party/lib" includes="*.jar"/>
+		</copy>
+		
+		<copy todir="${dir.output}/ROOT">
+			<!-- log4j.property is not used in code, but is used by ISM (setup) and for DR
+			<fileset dir="${dir.webUI}/war/" excludes="WEB-INF/classes,WEB-INF/classes/**,**/*.sig, **/log4j.properties" />
+			 -->
+			<fileset dir="${dir.webUI}/war/" excludes="WEB-INF/classes,WEB-INF/classes/**,**/*.sig" />
+		</copy>
+
+		<copy todir="${dir.output}/share">
+			<fileset dir="${dir.httpSharePath}/war/" excludes="WEB-INF/classes,WEB-INF/classes/**,**/*.sig" />
+		</copy>
+
+		<var name="webui.gwt.present" unset="true" />
+		<available file="${dir.temp}/webuigwt/webuigwtflag.txt" property="webui.gwt.present"/>
+		<if>
+		  	<istrue  value="${webui.gwt.present}" />
+			<then>
+				<delete dir="${dir.output}/ROOT/contents" />
+				<mkdir dir="${dir.output}/ROOT/contents" />
+				<copy todir="${dir.output}/ROOT/contents">
+					<fileset dir="${dir.temp}/webuigwt/war/contents" />
+				</copy>
+			</then>
+		</if>
+		
+		<copy todir="${dir.output}/ROOT/WEB-INF/lib">
+			<resources refid="webservice_ui_lib_id" />
+			<fileset file="${dir.temp}/linuximaging-webui.jar" />
+		</copy>
+
+	</target>
+	<target name="replace">
+		<replace encoding="UTF-8" summary="true" dir="${dir.webUI}/src" includes="com\ca\arcflash\ui\ARCserveLinuxImagingUI.gwt.xml" token="&lt;!--FAST_BUILD_CHECK--&gt;" value="&lt;set-property name=&quot;user.agent&quot; value=&quot;ie8&quot; /&gt;">
+		</replace>
+	</target>
+</project>

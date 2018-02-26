@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="WebApp_ID" version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	<display-name>ARCserve Linux Imaging</display-name>
+	
+	<servlet>
+        <description>LinuximagingService endpoint</description>
+        <display-name>LinuximagingServiceImpl</display-name>
+        <servlet-name>LinuximagingServiceImpl</servlet-name>
+        <servlet-class>com.sun.xml.ws.transport.http.servlet.WSServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LinuximagingServiceImpl</servlet-name>
+        <url-pattern>/services/*</url-pattern>
+    </servlet-mapping>
+    <servlet>
+	    <description>Receive IP from agent</description>
+	    <display-name>ReceiveIP</display-name>
+	    <servlet-name>ReceiveIP</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.ReceiveIP</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>ReceiveIP</servlet-name>
+	  <url-pattern>/ReceiveIP</url-pattern>
+	</servlet-mapping>
+	<servlet>
+	    <description>Check License</description>
+	    <display-name>CheckLicense</display-name>
+	    <servlet-name>CheckLicense</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.CheckLicenseServlet</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>CheckLicense</servlet-name>
+	  <url-pattern>/CheckLicense</url-pattern>
+	</servlet-mapping>
+	<servlet>
+	    <description>Receive job status from agent</description>
+	    <display-name>ReceiveJobStatus</display-name>
+	    <servlet-name>ReceiveJobStatus</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.ReceiveJobStatus</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>ReceiveJobStatus</servlet-name>
+	  <url-pattern>/ReceiveJobStatus</url-pattern>
+	</servlet-mapping>
+	<servlet>
+	    <description>Virtual Machine operator</description>
+	    <display-name>VMOperator</display-name>
+	    <servlet-name>VMOperator</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.VirtualMachineOperator</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>VMOperator</servlet-name>
+	  <url-pattern>/VMOperator</url-pattern>
+	</servlet-mapping>
+	<servlet>
+	    <description>Prepare migration bmr</description>
+	    <display-name>PrepareMigration</display-name>
+	    <servlet-name>PrepareMigration</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.PrepareMigration</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>PrepareMigration</servlet-name>
+	  <url-pattern>/PrepareMigration</url-pattern>
+	</servlet-mapping>
+	<servlet>
+	    <description>Delegates WinRM operation requests</description>
+	    <display-name>WinRMDelegate</display-name>
+	    <servlet-name>WinRMDelegate</servlet-name>
+	    <servlet-class>com.ca.arcserve.linuximaging.webservice.servlet.WinRMRequestDelegator</servlet-class>
+  	</servlet>
+	<servlet-mapping>
+	  <servlet-name>WinRMDelegate</servlet-name>
+	  <url-pattern>/WinRMDelegate/*</url-pattern>
+	</servlet-mapping>
+	<listener>
+        <listener-class>com.sun.xml.ws.transport.http.servlet.WSServletContextListener</listener-class>
+  	</listener>
+  	<listener>
+        <listener-class>com.ca.arcserve.linuximaging.webservice.servlet.ContextListener</listener-class>
+  	</listener>
+  	<listener>
+        <listener-class>com.ca.arcserve.linuximaging.webservice.servlet.SessionListener</listener-class>
+  	</listener>
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+		<welcome-file>index.htm</welcome-file>
+		<welcome-file>index.jsp</welcome-file>
+		<welcome-file>default.html</welcome-file>
+		<welcome-file>default.htm</welcome-file>
+		<welcome-file>default.jsp</welcome-file>
+	</welcome-file-list>
+</web-app>

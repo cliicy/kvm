@@ -1,0 +1,197 @@
+<?xml version="1.0"?>
+<project name="ARCFlash_common">
+	<!--
+		Attributes: build.bin.dir for javac to save dest classes,
+		java.source.dirs for depend to take as srcdir, jar.file.path.name for
+		jar's destfile jar.path.tmp is for intermediate usage jar.path is to
+		save the unpackaged contents of jar file debug.flag is to specify if
+		we compile java source code with debug information Elements:
+		jarFile-resources is for jar task sub element to specify the resources
+		to jar javac-srcs is for javac to specify the javac sources
+	-->
+	<macrodef name="macro_javac_jar">
+		<attribute name="build.bin.dir" />
+		<attribute name="java.source.dirs" />
+		<attribute name="jar.file.path.name" />
+		<attribute name="jar.path.tmp" />
+		<attribute name="jar.path" />
+		<attribute name="jar.file.path.name.tmp" />
+		<attribute name="debug.flag" default="on" />
+
+		<element name="jarFile-resources" />
+		<element name="javac-srcs" />
+		<element name="classpaths" />
+		<!-- This is used to run when the jar need to be re jared -->
+		<element name="extra-tasks"  optional="true"/>
+		<!-- depends must use this to test if the source is new relative to the class in this classpath -->
+		<element name="dependclasspath" optional="true"/>
+		<sequential>
+			<mkdir dir="@{build.bin.dir}" />
+			<mkdir dir="@{jar.path}" />
+			<delete dir="depcache">
+			</delete>
+			<CADepend srcdir="@{java.source.dirs}" destdir="@{build.bin.dir}"
+				cache="depcache" closure="yes" >
+				<dependclasspath/>
+			</CADepend>
+			<!-- second we compile. which will compile the updated java code -->
+			<javac includeantruntime="false" source="1.7" destdir="@{build.bin.dir}"
+				debug="@{debug.flag}">
+				<javac-srcs />
+				<classpaths />
+			</javac>
+
+			<!--
+				test if jar file contains the file that does not exist in jar source
+				directories
+			-->
+
+			<delete dir="@{jar.path.tmp}">
+			</delete>
+			<mkdir dir="@{jar.path.tmp}" />
+
+			<copy todir="@{jar.path.tmp}">
+				<jarFile-resources>
+				</jarFile-resources>
+			</copy>
+			<fileset id="differenceID" dir="@{jar.path}">
+				<different targetdir="@{jar.path.tmp}" ignoreFileTimes="true"
+					ignoreContents="true" />
+			</fileset>
+			<!--
+			<echo> The files not in sources but in jar are :
+				${toString:differenceID} </echo>
+				-->
+			<resourcecount property="count.foo" when="greater"
+				count="0" refid="differenceID">
+			</resourcecount>
+			<echo>The number of files not in sources but in jar are ${count.foo} </echo>
+			<if>
+				<equals arg1="${count.foo}" arg2="0" />
+
+				<then>
+					<fileset id="differenceID2" dir="@{jar.path.tmp}">
+						<different targetdir="@{jar.path}" ignoreFileTimes="true"
+							ignoreContents="true" />
+					</fileset>
+					<!-- <echo> The files not in jar but in source are :	${toString:differenceID2} </echo>
+					 -->
+					<resourcecount property="count.foo2" when="greater"
+						count="0" refid="differenceID2">
+					</resourcecount>
+					<echo>The number of files not in jar but in sources are ${count.foo2} </echo>
+					<if>
+						<equals arg1="${count.foo2}" arg2="0" />
+						<then>
+						</then>
+						<else>
+							<!-- we have new contents in sources -->
+							<echo>we have new things in source, so we must delete
+								@{jar.file.path.name} </echo>
+							<delete file="@{jar.file.path.name}" />
+							<echo>We reset the directory which contains the files of @{jar.path.tmp}, so that we will compare it with next build
+							</echo>
+							<delete dir="@{jar.path}" />
+							<echo> rename @{jar.path.tmp} into @{jar.path} </echo>
+							<move file="@{jar.path.tmp}" toFile="@{jar.path}" />
+						</else>
+					</if>
+				</then>
+				<else>
+					<!-- we have old contents in jarbin -->
+					<echo>we have old things in jar, so we must delete
+						@{jar.file.path.name} </echo>
+					<delete file="@{jar.file.path.name}" />
+					<echo>We reset the directory which contains the files of @{jar.path.tmp}, so that we will compare it with next build
+					</echo>
+					<delete dir="@{jar.path}" />
+					<echo> rename @{jar.path.tmp} into @{jar.path} </echo>
+					<move file="@{jar.path.tmp}" toFile="@{jar.path}" />
+				</else>
+			</if>
+
+
+			<var name="count.foo" unset="true" />
+			<var name="count.foo2" unset="true" />
+			<var name="jar.update.flag" unset="true" />
+
+			<!--
+				end to test if jar file contains the file that does not exist in
+				source directoris
+			-->
+
+			<!-- because if we add manifest dynamically, the jar always be updated,
+			     so we must to check if we need to do jaring before we add new build number and revision into it
+			    -->
+			<!-- first we try to jar barely -->
+			<jar destfile="@{jar.file.path.name.tmp}">
+				<jarFile-resources>
+				</jarFile-resources>
+			</jar>
+			<!-- and then we compare if we have updated it -->
+			<uptodate srcfile="@{jar.file.path.name.tmp}" property="jar.update.flag" value="true" targetfile="@{jar.file.path.name}">
+			</uptodate>
+			<if>
+				<istrue  value="${jar.update.flag}" />
+				<then>
+				</then>
+				<else>
+					<!-- we re do the jar with build revision and build number -->
+					<delete file="@{jar.file.path.name}" />
+					<jar destfile="@{jar.file.path.name}">
+						<jarFile-resources>
+						</jarFile-resources>
+						<manifest>
+							<attribute name="build-number" value="${build.number}.${build.revision}" />
+						</manifest>
+					</jar>
+					 <extra-tasks />
+				</else>
+			</if>
+			
+			<var name="jar.update.flag" unset="true" />
+		</sequential>
+	</macrodef>
+
+	<macrodef name="macro_gwtc">
+	<!--  we use nocache.js.file to compare with any file in gwt-srcs. if the nochade.js.file is newer than any files in gwt-srcs, we will not gwt compile -->
+		<attribute name="flagfile" />
+		<attribute name="nocache.js.file" />
+		<attribute name="gwt.output.dir" />
+		<attribute name="gwt.module.name" />
+		<element name="gwt-srcs" />
+		<element name="classpaths" />
+		<sequential>
+		<uptodate property="gwtc.update.flag" value="true" targetfile="@{nocache.js.file}">
+			<srcresources>
+				<gwt-srcs />
+			</srcresources>
+		</uptodate>
+		<if>
+			<istrue  value="${gwtc.update.flag}" />
+			<then>
+				<echo>we don't need to gwt compile remove flagfile</echo>
+				<delete file="@{flagfile}" />
+			</then>
+			<else>
+
+				<java failonerror="true" fork="true" dir="@{gwt.output.dir}" classname="com.google.gwt.dev.Compiler">
+					<classpaths />
+
+				<jvmarg value="-Xss32m" />
+				<jvmarg value="-Xmx512M" />
+				<arg value="-style" />
+				<arg value="OBFUSCATED" />
+				<arg value="-localWorkers" />
+				<arg value="${gwtworkers}" />
+				<arg value="@{gwt.module.name}" />
+
+				</java>
+				<touch file="@{flagfile}" />
+			</else>
+		</if>
+		<var name="gwtc.update.flag" unset="true" />
+
+		</sequential>
+	</macrodef>
+</project>
